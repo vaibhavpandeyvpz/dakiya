@@ -1,5 +1,5 @@
 # vaibhavpandeyvpz/dakiya
-Tiny **HTTP** client for exchanging [PSR-7](https://github.com/php-fig/http-message) messages build on top of curl.
+Tiny **HTTP** client for exchanging [PSR-7](https://github.com/php-fig/http-message) messages, built on top of [curl](http://php.net/manual/en/book.curl.php).
 
 > Dakiya: `डाकिया` (Postman)
 

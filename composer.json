@@ -13,7 +13,7 @@
       "Dakiya\\": "tests/"
     }
   },
-  "description": "Tiny HTTP client for exchanging PSR-7 messages build on top of curl.",
+  "description": "Tiny HTTP client for exchanging PSR-7 messages, built on top of curl.",
   "homepage": "http://vaibhavpandeyvpz.github.io/dakiya",
   "keywords": ["psr-7", "http", "client", "library"],
   "license": "MIT",
