@@ -13,7 +13,6 @@ namespace Dakiya;
 
 use Interop\Http\Factory\ResponseFactoryInterface;
 use Psr\Http\Message\RequestInterface;
-use Psr\Http\Message\ResponseInterface;
 
 /**
  * Class Client
