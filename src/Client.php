@@ -61,10 +61,9 @@ class Client implements ClientInterface
 
     /**
      * @param RequestInterface $request
-     * @param ResponseInterface[] $bag
      * @return array
      */
-    protected function prepare(RequestInterface $request, array &$bag)
+    protected function prepare(RequestInterface $request)
     {
         $options = $this->options;
         // Protocol Version
@@ -86,7 +85,7 @@ class Client implements ClientInterface
         // URI
         $options[CURLOPT_URL] = (string)$request->getUri();
         // Body
-        if (in_array($request->getMethod(), array('POST', 'PUT'), true)) {
+        if (in_array($request->getMethod(), array('PATCH', 'POST', 'PUT'))) {
             if (null !== ($body = $request->getBody())) {
                 $size = $body->getSize();
                 if (is_null($size) || ($size > 1024 * 1024)) {
@@ -130,10 +129,6 @@ class Client implements ClientInterface
         if ($request->getUri()->getUserInfo()) {
             $options[CURLOPT_USERPWD] = $request->getUri()->getUserInfo();
         }
-        // Response
-        $options[CURLOPT_WRITEFUNCTION] = function ($curl, $data) use (&$bag) {
-            return $bag[0]->getBody()->write($data);
-        };
         return $options;
     }
 
@@ -148,7 +143,7 @@ class Client implements ClientInterface
             $this->curl = curl_init();
         }
         $bag = array($this->factory->createResponse());
-        $options = $this->prepare($request, $bag);
+        $options = $this->prepare($request);
         // Headers
         $options[CURLOPT_HEADERFUNCTION] = function ($curl, $data) use (&$bag) {
             static $regex = '~^HTTP/(?<version>[012.]{1,3}+)\\s(?<status>[\\d]+)(?:\\s(?<reason>[a-zA-Z\\s]+))?$~';
@@ -167,6 +162,10 @@ class Client implements ClientInterface
                 }
             }
             return strlen($data);
+        };
+        // Body
+        $options[CURLOPT_WRITEFUNCTION] = function ($curl, $data) use (&$bag) {
+            return $bag[0]->getBody()->write($data);
         };
         curl_setopt_array($this->curl, $options);
         curl_exec($this->curl);

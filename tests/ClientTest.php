@@ -15,7 +15,6 @@ use Interop\Http\Factory\RequestFactoryInterface;
 use Interop\Http\Factory\StreamFactoryInterface;
 use Sandesh\RequestFactory;
 use Sandesh\ResponseFactory;
-use Sandesh\Stream;
 use Sandesh\StreamFactory;
 
 /**
@@ -139,9 +138,13 @@ class ClientTest extends \PHPUnit_Framework_TestCase
         $this->assertEquals('application/json', $response->getHeaderLine('Content-Type'));
     }
 
-    public function testPost()
+    /**
+     * @param string $method
+     * @dataProvider providePatchPostOrPut
+     */
+    public function testPatchPostOrPut($method)
     {
-        $request = $this->request->createRequest('POST', 'https://httpbin.org/post')
+        $request = $this->request->createRequest($method, 'https://httpbin.org/' . strtolower($method))
             ->withBody($this->stream->createStream('k1=v1&k2=v2'))
             ->withHeader('Content-Type', 'application/x-www-form-urlencoded');
         $response = $this->client->send($request);
@@ -156,9 +159,13 @@ class ClientTest extends \PHPUnit_Framework_TestCase
         $this->assertEquals('v2', $data['form']['k2']);
     }
 
-    public function testPostJson()
+    /**
+     * @param string $method
+     * @dataProvider providePatchPostOrPut
+     */
+    public function testPatchPostOrPutJson($method)
     {
-        $request = $this->request->createRequest('POST', 'https://httpbin.org/post')
+        $request = $this->request->createRequest($method, 'https://httpbin.org/' . strtolower($method))
             ->withBody($this->stream->createStream('{"k1": "v1", "k2": "v2"}'))
             ->withHeader('Content-Type', 'application/json');
         $response = $this->client->send($request);
@@ -171,5 +178,39 @@ class ClientTest extends \PHPUnit_Framework_TestCase
         $this->assertArrayHasKey('k2', $data['json']);
         $this->assertEquals('v1', $data['json']['k1']);
         $this->assertEquals('v2', $data['json']['k2']);
+    }
+
+    /**
+     * @return array
+     */
+    public function providePatchPostOrPut()
+    {
+        return array(
+            array('PATCH'),
+            array('POST'),
+            array('PUT'),
+        );
+    }
+
+    public function testDelete()
+    {
+        $request = $this->request->createRequest('DELETE', 'https://httpbin.org/delete');
+        $response = $this->client->send($request);
+        $this->assertInstanceOf('Psr\\Http\\Message\\ResponseInterface', $response);
+        $this->assertEquals(200, $response->getStatusCode());
+        $this->assertEquals('application/json', $response->getHeaderLine('Content-Type'));
+    }
+
+    public function testDeleteDiscardBody()
+    {
+        $request = $this->request->createRequest('DELETE', 'https://httpbin.org/delete')
+            ->withBody($this->stream->createStream('{"k1": "v1", "k2": "v2"}'))
+            ->withHeader('Content-Type', 'application/json');
+        $response = $this->client->send($request);
+        $this->assertInstanceOf('Psr\\Http\\Message\\ResponseInterface', $response);
+        $this->assertEquals(200, $response->getStatusCode());
+        $this->assertEquals('application/json', $response->getHeaderLine('Content-Type'));
+        $data = json_decode($response->getBody(), true);
+        $this->assertNull($data['json']);
     }
 }
