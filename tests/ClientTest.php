@@ -12,8 +12,11 @@
 namespace Dakiya;
 
 use Interop\Http\Factory\RequestFactoryInterface;
+use Interop\Http\Factory\StreamFactoryInterface;
 use Sandesh\RequestFactory;
 use Sandesh\ResponseFactory;
+use Sandesh\Stream;
+use Sandesh\StreamFactory;
 
 /**
  * Class ClientTest
@@ -31,10 +34,16 @@ class ClientTest extends \PHPUnit_Framework_TestCase
      */
     protected $request;
 
+    /**
+     * @var StreamFactoryInterface
+     */
+    protected $stream;
+
     protected function setUp()
     {
         $this->client = new Client(new ResponseFactory());
         $this->request = new RequestFactory();
+        $this->stream = new StreamFactory();
     }
 
     /**
@@ -128,5 +137,39 @@ class ClientTest extends \PHPUnit_Framework_TestCase
         $this->assertInstanceOf('Psr\\Http\\Message\\ResponseInterface', $response);
         $this->assertEquals(200, $response->getStatusCode());
         $this->assertEquals('application/json', $response->getHeaderLine('Content-Type'));
+    }
+
+    public function testPost()
+    {
+        $request = $this->request->createRequest('POST', 'https://httpbin.org/post')
+            ->withBody($this->stream->createStream('k1=v1&k2=v2'))
+            ->withHeader('Content-Type', 'application/x-www-form-urlencoded');
+        $response = $this->client->send($request);
+        $this->assertInstanceOf('Psr\\Http\\Message\\ResponseInterface', $response);
+        $this->assertEquals(200, $response->getStatusCode());
+        $this->assertEquals('application/json', $response->getHeaderLine('Content-Type'));
+        $data = json_decode($response->getBody(), true);
+        $this->assertArrayHasKey('form', $data);
+        $this->assertArrayHasKey('k1', $data['form']);
+        $this->assertArrayHasKey('k2', $data['form']);
+        $this->assertEquals('v1', $data['form']['k1']);
+        $this->assertEquals('v2', $data['form']['k2']);
+    }
+
+    public function testPostJson()
+    {
+        $request = $this->request->createRequest('POST', 'https://httpbin.org/post')
+            ->withBody($this->stream->createStream('{"k1": "v1", "k2": "v2"}'))
+            ->withHeader('Content-Type', 'application/json');
+        $response = $this->client->send($request);
+        $this->assertInstanceOf('Psr\\Http\\Message\\ResponseInterface', $response);
+        $this->assertEquals(200, $response->getStatusCode());
+        $this->assertEquals('application/json', $response->getHeaderLine('Content-Type'));
+        $data = json_decode($response->getBody(), true);
+        $this->assertArrayHasKey('json', $data);
+        $this->assertArrayHasKey('k1', $data['json']);
+        $this->assertArrayHasKey('k2', $data['json']);
+        $this->assertEquals('v1', $data['json']['k1']);
+        $this->assertEquals('v2', $data['json']['k2']);
     }
 }

@@ -12,6 +12,10 @@ install: travis_retry composer install --dev --no-interaction --prefer-dist
 
 language: php
 
+matrix:
+    allow_failures:
+        - php: hhvm
+
 php:
     - 5.3
     - 5.4
