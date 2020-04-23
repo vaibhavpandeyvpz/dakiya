@@ -11,18 +11,12 @@
 
 namespace Dakiya;
 
-use Psr\Http\Message\RequestInterface;
-use Psr\Http\Message\ResponseInterface;
+use Psr\Http\Client\ClientExceptionInterface;
 
 /**
- * Interface ClientInterface
+ * Class ClientException
  * @package Dakiya
  */
-interface ClientInterface
+class ClientException extends \Exception implements ClientExceptionInterface
 {
-    /**
-     * @param RequestInterface $request
-     * @return ResponseInterface
-     */
-    public function send(RequestInterface $request);
 }

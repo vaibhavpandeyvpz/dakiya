@@ -11,8 +11,10 @@
 
 namespace Dakiya;
 
-use Interop\Http\Factory\RequestFactoryInterface;
-use Interop\Http\Factory\StreamFactoryInterface;
+use Psr\Http\Client\ClientInterface;
+use Psr\Http\Message\RequestFactoryInterface;
+use Psr\Http\Message\ResponseInterface;
+use Psr\Http\Message\StreamFactoryInterface;
 use Sandesh\RequestFactory;
 use Sandesh\ResponseFactory;
 use Sandesh\StreamFactory;
@@ -31,18 +33,18 @@ class ClientTest extends \PHPUnit_Framework_TestCase
     /**
      * @var RequestFactoryInterface
      */
-    protected $request;
+    protected $requests;
 
     /**
      * @var StreamFactoryInterface
      */
-    protected $stream;
+    protected $streams;
 
     protected function setUp()
     {
         $this->client = new Client(new ResponseFactory());
-        $this->request = new RequestFactory();
-        $this->stream = new StreamFactory();
+        $this->requests = new RequestFactory();
+        $this->streams = new StreamFactory();
     }
 
     /**
@@ -52,12 +54,12 @@ class ClientTest extends \PHPUnit_Framework_TestCase
      */
     public function testCookies($name, $value)
     {
-        $client = new Client(new ResponseFactory(), array(
+        $client = new Client(new ResponseFactory(), [
             CURLOPT_COOKIEJAR => tempnam(sys_get_temp_dir(), 'cookie'),
-        ));
-        $request = $this->request->createRequest('GET', "https://httpbin.org/cookies/set?{$name}={$value}");
-        $response = $client->send($request);
-        $this->assertInstanceOf('Psr\\Http\\Message\\ResponseInterface', $response);
+        ]);
+        $request = $this->requests->createRequest('GET', "https://httpbin.org/cookies/set?{$name}={$value}");
+        $response = $client->sendRequest($request);
+        $this->assertInstanceOf(ResponseInterface::class, $response);
         $this->assertEquals(302, $response->getStatusCode());
         $this->assertTrue($response->hasHeader('Location'));
         $this->assertEquals('/cookies', $response->getHeaderLine('Location'));
@@ -71,10 +73,10 @@ class ClientTest extends \PHPUnit_Framework_TestCase
      */
     public function provideCookies()
     {
-        return array(
-            array('k1', 'v1'),
-            array('k2', 'v2'),
-        );
+        return [
+            ['k1', 'v1'],
+            ['k2', 'v2'],
+        ];
     }
 
     /**
@@ -84,9 +86,9 @@ class ClientTest extends \PHPUnit_Framework_TestCase
      */
     public function testContentTypes($path, $type)
     {
-        $request = $this->request->createRequest('GET', "https://httpbin.org/{$path}");
-        $response = $this->client->send($request);
-        $this->assertInstanceOf('Psr\\Http\\Message\\ResponseInterface', $response);
+        $request = $this->requests->createRequest('GET', "https://httpbin.org/{$path}");
+        $response = $this->client->sendRequest($request);
+        $this->assertInstanceOf(ResponseInterface::class, $response);
         $this->assertEquals($type, $response->getHeaderLine('Content-Type'));
     }
 
@@ -95,12 +97,12 @@ class ClientTest extends \PHPUnit_Framework_TestCase
      */
     public function provideContentTypes()
     {
-        return array(
-            array('html', 'text/html; charset=utf-8'),
-            array('ip', 'application/json'),
-            array('robots.txt', 'text/plain'),
-            array('xml', 'application/xml'),
-        );
+        return [
+            ['html', 'text/html; charset=utf-8'],
+            ['ip', 'application/json'],
+            ['robots.txt', 'text/plain'],
+            ['xml', 'application/xml'],
+        ];
     }
 
     /**
@@ -109,9 +111,9 @@ class ClientTest extends \PHPUnit_Framework_TestCase
      */
     public function testStatusCodes($code)
     {
-        $request = $this->request->createRequest('GET', "https://httpbin.org/status/{$code}");
-        $response = $this->client->send($request);
-        $this->assertInstanceOf('Psr\\Http\\Message\\ResponseInterface', $response);
+        $request = $this->requests->createRequest('GET', "https://httpbin.org/status/{$code}");
+        $response = $this->client->sendRequest($request);
+        $this->assertInstanceOf(ResponseInterface::class, $response);
         $this->assertEquals($code, $response->getStatusCode());
     }
 
@@ -120,20 +122,20 @@ class ClientTest extends \PHPUnit_Framework_TestCase
      */
     public function provideStatusCodes()
     {
-        return array(
-            array(200),
-            array(400),
-            array(401),
-            array(405),
-            array(500),
-        );
+        return [
+            [200],
+            [400],
+            [401],
+            [405],
+            [500],
+        ];
     }
 
     public function testGet()
     {
-        $request = $this->request->createRequest('GET', 'https://httpbin.org/get');
-        $response = $this->client->send($request);
-        $this->assertInstanceOf('Psr\\Http\\Message\\ResponseInterface', $response);
+        $request = $this->requests->createRequest('GET', 'https://httpbin.org/get');
+        $response = $this->client->sendRequest($request);
+        $this->assertInstanceOf(ResponseInterface::class, $response);
         $this->assertEquals(200, $response->getStatusCode());
         $this->assertEquals('application/json', $response->getHeaderLine('Content-Type'));
     }
@@ -144,11 +146,11 @@ class ClientTest extends \PHPUnit_Framework_TestCase
      */
     public function testPatchPostOrPut($method)
     {
-        $request = $this->request->createRequest($method, 'https://httpbin.org/' . strtolower($method))
-            ->withBody($this->stream->createStream('k1=v1&k2=v2'))
+        $request = $this->requests->createRequest($method, 'https://httpbin.org/' . strtolower($method))
+            ->withBody($this->streams->createStream('k1=v1&k2=v2'))
             ->withHeader('Content-Type', 'application/x-www-form-urlencoded');
-        $response = $this->client->send($request);
-        $this->assertInstanceOf('Psr\\Http\\Message\\ResponseInterface', $response);
+        $response = $this->client->sendRequest($request);
+        $this->assertInstanceOf(ResponseInterface::class, $response);
         $this->assertEquals(200, $response->getStatusCode());
         $this->assertEquals('application/json', $response->getHeaderLine('Content-Type'));
         $data = json_decode($response->getBody(), true);
@@ -165,11 +167,11 @@ class ClientTest extends \PHPUnit_Framework_TestCase
      */
     public function testPatchPostOrPutJson($method)
     {
-        $request = $this->request->createRequest($method, 'https://httpbin.org/' . strtolower($method))
-            ->withBody($this->stream->createStream('{"k1": "v1", "k2": "v2"}'))
+        $request = $this->requests->createRequest($method, 'https://httpbin.org/' . strtolower($method))
+            ->withBody($this->streams->createStream('{"k1": "v1", "k2": "v2"}'))
             ->withHeader('Content-Type', 'application/json');
-        $response = $this->client->send($request);
-        $this->assertInstanceOf('Psr\\Http\\Message\\ResponseInterface', $response);
+        $response = $this->client->sendRequest($request);
+        $this->assertInstanceOf(ResponseInterface::class, $response);
         $this->assertEquals(200, $response->getStatusCode());
         $this->assertEquals('application/json', $response->getHeaderLine('Content-Type'));
         $data = json_decode($response->getBody(), true);
@@ -185,29 +187,29 @@ class ClientTest extends \PHPUnit_Framework_TestCase
      */
     public function providePatchPostOrPut()
     {
-        return array(
-            array('PATCH'),
-            array('POST'),
-            array('PUT'),
-        );
+        return [
+            ['PATCH'],
+            ['POST'],
+            ['PUT'],
+        ];
     }
 
     public function testDelete()
     {
-        $request = $this->request->createRequest('DELETE', 'https://httpbin.org/delete');
-        $response = $this->client->send($request);
-        $this->assertInstanceOf('Psr\\Http\\Message\\ResponseInterface', $response);
+        $request = $this->requests->createRequest('DELETE', 'https://httpbin.org/delete');
+        $response = $this->client->sendRequest($request);
+        $this->assertInstanceOf(ResponseInterface::class, $response);
         $this->assertEquals(200, $response->getStatusCode());
         $this->assertEquals('application/json', $response->getHeaderLine('Content-Type'));
     }
 
     public function testDeleteDiscardBody()
     {
-        $request = $this->request->createRequest('DELETE', 'https://httpbin.org/delete')
-            ->withBody($this->stream->createStream('{"k1": "v1", "k2": "v2"}'))
+        $request = $this->requests->createRequest('DELETE', 'https://httpbin.org/delete')
+            ->withBody($this->streams->createStream('{"k1": "v1", "k2": "v2"}'))
             ->withHeader('Content-Type', 'application/json');
-        $response = $this->client->send($request);
-        $this->assertInstanceOf('Psr\\Http\\Message\\ResponseInterface', $response);
+        $response = $this->client->sendRequest($request);
+        $this->assertInstanceOf(ResponseInterface::class, $response);
         $this->assertEquals(200, $response->getStatusCode());
         $this->assertEquals('application/json', $response->getHeaderLine('Content-Type'));
         $data = json_decode($response->getBody(), true);

@@ -1,5 +1,5 @@
 # vaibhavpandeyvpz/dakiya
-Tiny **HTTP** client for exchanging [PSR-7](https://github.com/php-fig/http-message) messages, built on top of [curl](http://php.net/manual/en/book.curl.php).
+Tiny **HTTP** client for exchanging [PSR-7](https://github.com/php-fig/http-message) messages, based on [PSR-18](https://www.php-fig.org/psr/psr-18/).
 
 > Dakiya: `डाकिया` (Postman)
 
@@ -11,6 +11,20 @@ Tiny **HTTP** client for exchanging [PSR-7](https://github.com/php-fig/http-mess
 [![License][license-image]][license-url]
 
 [![SensioLabsInsight][insights-image]][insights-url]
+
+Usage
+-----
+```php
+<?php
+
+$client = new Dakiya\Client(new Sandesh\ResponseFactory());
+
+$request = (new Sandesh\RequestFactory())->createRequest('GET', 'https://example.com/');
+$response = $client->sendRequest($request);
+if ($response->getStatusCode() === 200) {
+    // ...do as required
+}
+```
 
 Documentation
 -------------
@@ -28,7 +42,7 @@ See [LICENSE.md][license-url] file.
 [latest-version-url]: https://github.com/vaibhavpandeyvpz/dakiya/releases
 [downloads-image]: https://img.shields.io/packagist/dt/vaibhavpandeyvpz/dakiya.svg?style=flat-square
 [downloads-url]: https://packagist.org/packages/vaibhavpandeyvpz/dakiya
-[php-version-image]: http://img.shields.io/badge/php-5.3+-8892be.svg?style=flat-square
+[php-version-image]: http://img.shields.io/badge/php-7.0+-8892be.svg?style=flat-square
 [php-version-url]: https://packagist.org/packages/vaibhavpandeyvpz/dakiya
 [license-image]: https://img.shields.io/badge/license-MIT-brightgreen.svg?style=flat-square
 [license-url]: LICENSE.md

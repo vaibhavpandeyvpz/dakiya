@@ -11,8 +11,10 @@
 
 namespace Dakiya;
 
-use Interop\Http\Factory\ResponseFactoryInterface;
+use Psr\Http\Client\ClientInterface;
+use Psr\Http\Message\ResponseFactoryInterface;
 use Psr\Http\Message\RequestInterface;
+use Psr\Http\Message\ResponseInterface;
 
 /**
  * Class Client
@@ -33,19 +35,19 @@ class Client implements ClientInterface
     /**
      * @var array
      */
-    protected $options = array(
+    protected $options = [
         CURLOPT_FOLLOWLOCATION => false,
         CURLOPT_HEADER => false,
         CURLOPT_RETURNTRANSFER => false,
-        CURLOPT_USERAGENT => 'Dakiya/PHP',
-    );
+        CURLOPT_USERAGENT => 'vaibhavpandeyvpz/dakiya',
+    ];
 
     /**
      * Client constructor.
      * @param ResponseFactoryInterface $factory
      * @param array $options
      */
-    public function __construct(ResponseFactoryInterface $factory, array $options = array())
+    public function __construct(ResponseFactoryInterface $factory, array $options = [])
     {
         $this->factory = $factory;
         $this->options = array_merge($this->options, $options);
@@ -84,7 +86,7 @@ class Client implements ClientInterface
         // URI
         $options[CURLOPT_URL] = (string)$request->getUri();
         // Body
-        if (in_array($request->getMethod(), array('PATCH', 'POST', 'PUT'))) {
+        if (in_array($request->getMethod(), ['PATCH', 'POST', 'PUT'])) {
             if (null !== ($body = $request->getBody())) {
                 $size = $body->getSize();
                 if (is_null($size) || ($size > 1024 * 1024)) {
@@ -101,16 +103,16 @@ class Client implements ClientInterface
             }
         }
         // Headers
-        $headers = array('Expect:');
+        $headers = ['Expect:'];
         foreach ($request->getHeaders() as $name => $values) {
             $header = strtolower($name);
             if ('expect' === $header) {
                 continue;
             } elseif ('content-length' === $header) {
                 if (isset($options[CURLOPT_POSTFIELDS])) {
-                    $values = array(strlen($options[CURLOPT_POSTFIELDS]));
+                    $values = [strlen($options[CURLOPT_POSTFIELDS])];
                 } elseif (empty($options[CURLOPT_READFUNCTION])) {
-                    $values = array(0);
+                    $values = [0];
                 }
             }
             foreach ($values as $value) {
@@ -134,14 +136,14 @@ class Client implements ClientInterface
     /**
      * {@inheritdoc}
      */
-    public function send(RequestInterface $request)
+    public function sendRequest(RequestInterface $request): ResponseInterface
     {
         if (is_resource($this->curl)) {
             curl_reset($this->curl);
         } else {
             $this->curl = curl_init();
         }
-        $bag = array($this->factory->createResponse());
+        $bag = [$this->factory->createResponse()];
         $options = $this->prepare($request);
         // Headers
         $options[CURLOPT_HEADERFUNCTION] = function ($curl, $data) use (&$bag) {
@@ -152,7 +154,7 @@ class Client implements ClientInterface
                     $bag[0] = $bag[0]->withProtocolVersion($matches['version'])
                         ->withStatus($matches['status'], isset($matches['reason']) ? $matches['reason'] : '');
                 } else {
-                    list($name, $value) = explode(': ', $header, 2);
+                    list ($name, $value) = explode(': ', $header, 2);
                     if ($bag[0]->hasHeader($name)) {
                         $bag[0] = $bag[0]->withAddedHeader($name, $value);
                     } else {
@@ -168,7 +170,8 @@ class Client implements ClientInterface
         };
         curl_setopt_array($this->curl, $options);
         curl_exec($this->curl);
-        switch (curl_errno($this->curl)) {
+        $errno = curl_errno($this->curl);
+        switch ($errno) {
             case CURLE_OK:
                 break;
             case CURLE_COULDNT_RESOLVE_PROXY:
@@ -177,7 +180,9 @@ class Client implements ClientInterface
             case CURLE_OPERATION_TIMEOUTED:
             case CURLE_SSL_CONNECT_ERROR:
             default:
-                throw new \RuntimeException(curl_error($this->curl));
+                $e = new NetworkException(curl_error($this->curl), $errno);
+                $e->setRequest($request);
+                throw $e;
         }
         return $bag[0];
     }
