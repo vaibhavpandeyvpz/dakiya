@@ -1,8 +1,10 @@
 {
-  "authors": [{
-    "name": "Vaibhav Pandey",
-    "email": "contact@vaibhavpandey.com"
-  }],
+  "authors": [
+    {
+      "name": "Vaibhav Pandey",
+      "email": "contact@vaibhavpandey.com"
+    }
+  ],
   "autoload": {
     "psr-4": {
       "Dakiya\\": "src/"
@@ -14,23 +16,30 @@
     }
   },
   "description": "Tiny HTTP client for exchanging PSR-7 messages, based on PSR-18.",
-  "homepage": "http://vaibhavpandeyvpz.github.io/dakiya",
-  "keywords": ["psr-7", "http", "client", "library"],
+  "homepage": "https://github.com/vaibhavpandeyvpz/dakiya",
+  "keywords": [
+    "psr-7",
+    "psr-18",
+    "http",
+    "client",
+    "library",
+    "curl"
+  ],
   "license": "MIT",
   "name": "vaibhavpandeyvpz/dakiya",
   "provide": {
     "psr/http-client-implementation": "^1.0"
   },
   "require": {
-    "php": "^7.0",
+    "php": "^8.2",
     "ext-curl": "*",
     "psr/http-client": "^1.0",
     "psr/http-factory": "^1.0",
-    "psr/http-message": "^1.0"
+    "psr/http-message": "^2.0"
   },
   "require-dev": {
-    "phpunit/phpunit": "^4.0 || ^5.0",
-    "vaibhavpandeyvpz/sandesh": "^2.0"
+    "phpunit/phpunit": "^10.0",
+    "vaibhavpandeyvpz/sandesh": "^3.0"
   },
   "suggest": {
     "vaibhavpandeyvpz/sandesh": ""
