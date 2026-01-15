@@ -65,13 +65,14 @@ final class Client implements ClientInterface
     /**
      * Destructor.
      *
-     * Closes the cURL handle if it was initialized.
+     * The cURL handle is automatically closed when the object is destroyed
+     * in PHP 8.0+ as \CurlHandle objects are automatically cleaned up.
      */
     public function __destruct()
     {
-        if ($this->curl instanceof \CurlHandle) {
-            curl_close($this->curl);
-        }
+        // No explicit cleanup needed - \CurlHandle is automatically closed
+        // when the object goes out of scope in PHP 8.0+
+        $this->curl = null;
     }
 
     /**
